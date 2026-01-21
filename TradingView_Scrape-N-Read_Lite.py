@@ -19,14 +19,18 @@ def set_console_title(title):
 
 set_console_title("TradingView Headline Scrape-N-Read Lite by @JFKN1GHT")
 
+# ------------------ Base directory (script or EXE safe) ------------------
+if getattr(sys, 'frozen', False):
+    BASE_DIR = Path(sys.executable).parent
+else:
+    BASE_DIR = Path(__file__).resolve().parent
+
 # ------------------ Default URL ------------------
 DEFAULT_URL = "https://www.tradingview.com/news-flow/?market=etf,crypto,forex,index,futures,bond,corp_bond,economic"
 
 # ------------------ Load URL from external file with fallback ------------------
-BASE_DIR = Path(__file__).resolve().parent
 URL_FILE = BASE_DIR / "Scrape-n-Read_LITE_URL.txt"
-
-URL = DEFAULT_URL  # Start with default
+URL = DEFAULT_URL
 
 if URL_FILE.exists():
     with URL_FILE.open("r", encoding="utf-8") as f:
@@ -81,20 +85,41 @@ async def scroll_page(page, times=4, pause=0.8):
         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         await asyncio.sleep(pause)
 
+# ------------------ Resolve bundled Chromium ------------------
+def get_chromium_executable():
+    """
+    Returns path to bundled Chromium if running as EXE,
+    otherwise returns None to let Playwright use its cache.
+    """
+    if getattr(sys, 'frozen', False):
+        chromium_path = (
+            BASE_DIR
+            / "playwright-browsers"
+            / "chromium"
+            / "chrome-win"
+            / "chrome.exe"
+        )
+        if not chromium_path.exists():
+            raise FileNotFoundError(f"Chromium not found at {chromium_path}")
+        return str(chromium_path)
+    return None
+
 # ------------------ Main async loop ------------------
 async def main():
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
+    chromium_exe = get_chromium_executable()
 
-        # Track seen headlines with provider + timestamp
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(
+            headless=True,
+            executable_path=chromium_exe
+        )
+
+        page = await browser.new_page()
         seen = set()
 
-        # Initial load
         await page.goto(URL, wait_until="domcontentloaded")
         await scroll_page(page)
 
-        # Initial output
         items = await scrape_headlines_with_time(page)
         for item in reversed(items):
             unique_id = f"{item['headline']}|{item['provider']}|{item['event_time']}"
@@ -116,24 +141,21 @@ async def main():
                 unique_id = f"{item['headline']}|{item['provider']}|{item['event_time']}"
                 if unique_id not in seen:
                     ts = format_event_time(item["event_time"])
-                    provider = item["provider"]
-
-                    if sys.platform == "win32":
-                        playsound("C:/Windows/Media/chimes.wav")
-                    elif sys.platform == "darwin": # macOS 
-                        sound = "/System/Library/Sounds/Glass.aiff"
-                    elif sys.platform.startswith("linux"):
-                        sound = "/usr/share/sounds/freedesktop/stereo/complete.oga"
-
-                    print(f"[{ts}] - {item['headline']} ({provider})")
+                    print(f"[{ts}] - {item['headline']} ({item['provider']})")
                     seen.add(unique_id)
 
-                    # TTS reads headline only
+                    # Windows-safe sound
+                    if os.name == "nt":
+                        #import winsound
+                        #winsound.MessageBeep()
+                        playsound("C:/Windows/Media/chimes.wav")
+
+                    # Speak headline
                     engine.say(item['headline'])
                     while engine.isBusy():
                         engine.iterate()
                         time.sleep(0.1)
 
-# ------------------  Main ------------------
+# ------------------ Main ------------------
 if __name__ == "__main__":
     asyncio.run(main())
