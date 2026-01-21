@@ -4,7 +4,7 @@
 
 # TradingView Headline Scrape-N-Read (Lite)
 
-**TradingView Headline Scrape-N-Read Lite** is a lightweight, cross-platform Python tool that continuously scrapes live headlines from TradingView’s News Flow and reads new headlines aloud using text-to-speech (TTS).
+**TradingView Headline Scrape-N-Read Lite** is a lightweight, Python tool that continuously scrapes live headlines from TradingView’s News Flow and reads new headlines aloud using text-to-speech (TTS).
 
 Designed for traders, analysts, and anyone who wants **real-time market news while keeping their eyes on the charts**.
 
