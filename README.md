@@ -74,3 +74,6 @@ If the file is missing or invalid, the script falls back to the default TradingV
 ## Platform Notes
 Sounds:
 - Windows: Uses system chime
+
+### DISCLAIMER
+THIS PROJECT IS FOR EDUCATIONAL AND PERSONAL USE ONLY. IT IS NOT AFFILIATED WITH TRADINGVIEW. USE RESPONSIBLY AND RESPECT WEBSITE TERMS OF SERVICE.
